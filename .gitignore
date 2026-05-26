@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Scrapy stuff
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# Pyre type checker
+.pyre/
+
+# mypy
+.mypy_cache/
+
+# VS Code
+.vscode/
+
+# Environment variables files
+.env
+.env.*
+env.local
+
+# Ignore cached data files
+.cache/

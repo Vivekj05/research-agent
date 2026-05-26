@@ -1,0 +1,13 @@
+langchain
+uvicorn
+fastapi
+langchain-mistralai
+langchain-community
+dotenv
+beautifulsoup4
+requests
+pandas
+tiktoken
+rich
+langchain-core
+tavily-python
