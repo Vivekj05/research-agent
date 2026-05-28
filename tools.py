@@ -19,7 +19,7 @@ def search_web(query: str) -> str:
         out.append(f"Title:{r['title']}\nURL:{r['url']}\nsnippet:{r['content'][:300]}\n")
     return "\n".join(out)
 
-print(search_web.invoke("latest news on AI"))
+# print(search_web.invoke("latest news on AI"))
 
 @tool
 def scrape_url(url: str) -> str:

@@ -1,5 +1,13 @@
-from agents import build_scrape_agent , build_search_agent , writer_chain , critic_chain
+from agents import build_scrape_agent , build_search_agent , writer_chain , critic_chain, revision_chain
 from langchain_core.messages import HumanMessage
+import re
+
+def extract_score(feedback: str):
+    match = re.search(r"Score:\s*(\d+)/10", feedback)
+    if match:
+        return int(match.group(1))
+    return 0
+
 def run_research_pipeline(topic : str) -> dict:
 
     state = {}
@@ -25,9 +33,20 @@ def run_research_pipeline(topic : str) -> dict:
     reader_agent = build_scrape_agent()
     reader_result = reader_agent.invoke({
         "messages": [HumanMessage(
-            content=f"Based on the following search results about '{topic}', "
-            f"pick the most relevant URL and scrape it for deeper content.\n\n"
-            f"Search Results:\n{state['search_results'][:800]}"
+           content=f"""
+            Based on the following search results about '{topic}', identify the 3 most relevant and reliable URLs.
+
+            Scrape all 3 sources and combine their key findings into one detailed research context.
+
+            Prioritize:
+            - recent information
+            - reliable sources
+            - technical depth
+            - factual consistency
+
+            Search Results:
+            {state['search_results'][:1200]}
+            """
         )]
     })
 
@@ -65,6 +84,22 @@ def run_research_pipeline(topic : str) -> dict:
 
     print("\n critic report \n", state['feedback'])
 
+    score = extract_score(state["feedback"])
+
+    if score < 8:
+        print("\n" + "="*50)
+        print("Step 5 - Revising report using critic feedback...")
+        print("="*50)
+
+        state["revised_report"] = revision_chain.invoke({
+            "report": state["report"],
+            "feedback": state["feedback"]
+        })
+
+        print("\nRevised Report:\n", state["revised_report"])
+    else:
+        state["revised_report"] = state["report"]
+        
     return state
 
 

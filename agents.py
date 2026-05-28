@@ -65,3 +65,24 @@ One line verdict:
 ])
 
 critic_chain = critic_prompt | llm | StrOutputParser()
+
+revision_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert research editor."),
+    ("human", """
+Improve the research report using the critic feedback.
+
+Original Report:
+{report}
+
+Critic Feedback:
+{feedback}
+
+Rewrite the report to address all weaknesses while keeping it:
+- factual
+- structured
+- concise
+- professional
+""")
+])
+
+revision_chain = revision_prompt | llm | StrOutputParser()
