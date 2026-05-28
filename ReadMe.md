@@ -1,25 +1,80 @@
 # 🔍 Research Agent
 
-An agentic AI pipeline that researches any topic by searching the web, scraping content, writing a structured report, and critically reviewing it — all in 4 automated steps.
+An agentic AI pipeline that researches any topic by searching the web, scraping content, writing a structured report, critically reviewing it, and refining it — all in 5 automated steps.
 
 ---
 
-## How It Works
+## Architecture
 
 ```
-Topic Input
-    │
-    ▼
-[Step 1] Search Agent      → finds recent, relevant sources from the web
-    │
-    ▼
-[Step 2] Scrape Agent      → deep-scrapes the most relevant URL
-    │
-    ▼
-[Step 3] Writer Chain      → drafts a structured research report
-    │
-    ▼
-[Step 4] Critic Chain      → reviews and scores the report
+                        ┌─────────────────────┐
+                        │        INPUT        │
+                        │  Research Topic /   │
+                        │      Question       │
+                        └──────────┬──────────┘
+                                   │
+                                   ▼
+              ┌────────────────────────────────────────┐
+              │           STEP 1 · SEARCH AGENT        │
+              │  Uses Tavily to find recent, reliable  │
+              │        and relevant information        │
+              │                                        │
+              │  Output: Search Results                │
+              │          (Top Links & Snippets)        │
+              └────────────────────┬───────────────────┘
+                                   │
+                                   ▼
+              ┌────────────────────────────────────────┐
+              │          STEP 2 · READER AGENT         │
+              │  Selects top 3 URLs and scrapes full   │
+              │     content from multiple sources      │
+              │                                        │
+              │  Output: Scraped Content               │
+              │          (Aggregated Context)          │
+              └────────────────────┬───────────────────┘
+                                   │
+                                   ▼
+              ┌────────────────────────────────────────┐
+              │          STEP 3 · WRITER CHAIN         │
+              │   Synthesizes search + scraped data    │
+              │    into a well-structured report       │
+              │                                        │
+              │  Output: Draft Research Report         │
+              └────────────────────┬───────────────────┘
+                                   │
+                                   ▼
+              ┌────────────────────────────────────────┐
+              │          STEP 4 · CRITIC CHAIN         │
+              │  Evaluates report for quality,         │
+              │  accuracy, completeness, and clarity   │
+              │                                        │
+              │  Output: Critique & Feedback           │
+              │          + Score (0–10)                │
+              └────────────────────┬───────────────────┘
+                                   │
+                          ┌────────▼────────┐
+                          │   Score ≥ 8?    │
+                          └────────┬────────┘
+                     Yes ◄─────────┴──────────► No
+                      │                          │
+                      │                          ▼
+                      │       ┌────────────────────────────────────────┐
+                      │       │        STEP 5 · REVISION CHAIN         │
+                      │       │  Refines the draft based on critic     │
+                      │       │  feedback to address gaps and improve  │
+                      │       │  quality                               │
+                      │       │                                        │
+                      │       │  Output: Revised Report                │
+                      │       └──────────────────┬─────────────────────┘
+                      │                          │
+                      └──────────────┬───────────┘
+                                     │
+                                     ▼
+              ┌────────────────────────────────────────┐
+              │           FINAL RESEARCH REPORT        │
+              │   High-quality, refined report ready   │
+              │               for use                  │
+              └────────────────────────────────────────┘
 ```
 
 ---
@@ -28,11 +83,10 @@ Topic Input
 
 ```
 RESEARCH-AGENT/
-├── agents.py               # Search agent, scrape agent, writer & critic chains
-├── pipeline.py             # Orchestrates all 4 steps
-├── tools.py                # Tool definitions (search, scraper)
-├── app.py                  # FastAPI backend (SSE streaming)
-├── research_agent_ui.html  # Frontend (open in browser)
+├── agents.py               # Search agent, scrape agent, writer, critic & revision chains
+├── pipeline.py             # Orchestrates all 5 steps
+├── tools.py                # Tool definitions (Tavily search, scraper)
+├── app.py                  # Streamlit UI
 ├── .env                    # API keys
 └── requirements.txt        # Dependencies
 ```
@@ -73,26 +127,14 @@ TAVILY_API_KEY=your_key_here
 
 ## Running the Project
 
-**Start the FastAPI server:**
+**Launch the Streamlit app:**
 ```bash
-uvicorn app:app --reload
+streamlit run app.py
 ```
 
-Server runs at → `http://localhost:8000`
+App runs at → `http://localhost:8501`
 
-**Open the frontend:**
-
-Just open `research_agent_ui.html` in your browser. No extra setup needed.
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/run/stream` | Run pipeline with live SSE updates |
-| `POST` | `/run` | Run pipeline, return all results at once |
-| `GET` | `/health` | Check if server is running |
+The UI shows a live pipeline panel on the right as each step runs — search, scrape, write, critique, and (if needed) revise — with the final report rendered on the left.
 
 ---
 
@@ -102,12 +144,21 @@ Just open `research_agent_ui.html` in your browser. No extra setup needed.
 python pipeline.py
 ```
 
-You'll be prompted to enter a topic directly.
+You'll be prompted to enter a topic directly. The pipeline prints each step's output and saves the final report.
+
+---
+
+## How the Revision Loop Works
+
+After the Writer Chain produces a draft, the Critic Chain scores it from 0–10 based on quality, accuracy, completeness, and clarity.
+
+- **Score ≥ 8** → Draft is accepted as the final report directly.
+- **Score < 8** → The Revision Chain receives both the draft and the critic's feedback, and produces an improved version which becomes the final report.
 
 ---
 
 ## Requirements
 
 - Python 3.9+
-- MISTRALAI API key
+- Mistral AI API key
 - Tavily API key (for web search)
